@@ -1,0 +1,12 @@
+module.exports = {
+    port: 3000,
+    url: 'localhost',
+    // for an OIDC Auth API App
+    ikey: '',
+    skey: '',
+    // for a Web SDK App
+    clientId: '',
+    clientSecret: '',
+    apiHost: '',
+    redirectUrl: 'http://localhost:3000/redirect'
+}

@@ -1,0 +1,29 @@
+{
+  "name": "duo_challenge",
+  "version": "1.0.0",
+  "description": "generate a message and require a duo challenge to approve",
+  "main": "index.js",
+  "scripts": {
+    "test": "index.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugryn-josh/symmetrical-octo-funicular.git"
+  },
+  "keywords": [
+    "duo"
+  ],
+  "author": "josh bugryn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bugryn-josh/symmetrical-octo-funicular/issues"
+  },
+  "homepage": "https://github.com/bugryn-josh/symmetrical-octo-funicular#readme",
+  "dependencies": {
+    "@duosecurity/duo_api": "^1.2.3",
+    "express": "^4.18.1",
+    "express-session": "^1.17.3",
+    "nunjucks": "^3.2.3"
+  }
+}
