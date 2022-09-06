@@ -59,7 +59,6 @@ class MultiAuthFlow extends EventEmitter{
         this.denied = [];
         this.on("Approval", (user) => {
             console.log(user, " Success ");
-            this.approved.push(user);
             if (this.approved.length >= this.threshold) {
                 this.emit('Finished', true);
             }
@@ -67,7 +66,6 @@ class MultiAuthFlow extends EventEmitter{
 
         this.on("Denial", (user) => {
             console.log(user, " Denied ");
-            this.denied.push(user);
             if (this.threshold > (this.usernames.length - this.denied.length)) {
                 this.emit('Finished', false)
             }
@@ -87,7 +85,6 @@ class MultiAuthFlow extends EventEmitter{
     }
 
     #updateFlow = (data, user, state, callback) => {
-        console.log(user, " updateFlow ", state);
         this.currData[user] = data;
         this.state[user] = state;
         callback(user);
@@ -98,14 +95,11 @@ class MultiAuthFlow extends EventEmitter{
     }
 
     #startAuth = (user) => {
-        console.log(user, "startAuth");
         this.#client.jsonApiCall('POST', '/auth/v2/preauth', {username : user}, (data) => {this.#updateFlow(data, user, 'sendPush', this.#sendPush)});
     }
 
     #sendPush = (user) => {
         const devices = this.currData[user].response?.devices?.[0]
-
-        console.log(user, "sendPush");
 
         if (!devices?.capabilities){
             this.#procResult(user);
