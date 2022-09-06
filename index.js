@@ -43,46 +43,69 @@ class AuthFlow {
     }
 }
 
-class MultiAuthFlow {
+class MultiAuthFlow extends EventEmitter{
     #res;
     #client;
     constructor(client, usernames, threshold, res){
         this.usernames = usernames;
         this.#res = res;
-        this.currData = null;
-        this.state = this.#initMultiState(usernames);
+        this.currData = this.#initMultiState(usernames, null);
+        this.state = this.#initMultiState(usernames, 'preAuth');
         this.#client = client;
         this.threshold = threshold;
         this.approved = [];
+        this.denied = [];
+        this.on("Approval", (user) => {
+            this.approved.push(user);
+            if (this.approved.length >= this.threshold) {
+                this.emit('Finished', True);
+            }
+        });
+
+        this.on("Denial", (user) => {
+            this.denied.push(user);
+            if (this.threshold - this.denied.length <= 0) {
+                this.res.render('success.html', {message: `Success: Approved by ${this.approved.length}; required ${this.threshold}`});
+                this.emit('Finished')
+            }
+        });
+
+        this.once('Finished', (result) => {
+            if(result) {
+                this.res.render('success.html', {message: `Success: Approved by ${this.approved.length}; required ${this.threshold}`});
+                return;
+            }
+            this.res.render('success.html', {message: `Failure: Denied by ${this.denied.length} of ${this.usernames.length}; required ${this.threshold} cannot be met.`});
+        });
     }
 
-    #initMultiState = (usernames) => {
-        return usernames.reduce((obj, key) => (obj[key]='preAuth', obj), {});
+    #initMultiState = (usernames, initVal) => {
+        return usernames.reduce((obj, key) => (obj[key]=initVal, obj), {});
     }
 
-    #updateFlow = (data, state, callback) => {
-        this.currData = data;
-        this.state = state;
-        callback();
+    #updateFlow = (data, user, state, callback) => {
+        this.currData[user] = data;
+        this.state[user] = state;
+        callback(user);
     }
 
-    startAuth = () => {
-        this.client.jsonApiCall('POST', '/auth/v2/preauth', {username : this.username}, (data) => {this.updateFlow(data, 'sendPush', this.sendPush)});
+    startAuth = (user) => {
+        this.client.jsonApiCall('POST', '/auth/v2/preauth', {username : user}, (data) => {this.updateFlow(data, user, 'sendPush', this.sendPush)});
     }
 
-    #sendPush = () => {
+    #sendPush = (user) => {
         const devices = this.currData.response?.devices[0]
 
         if (devices.capabilities.indexOf('push') !== -1 && this.currData?.stat === 'OK'){
-            this.client.jsonApiCall('POST', '/auth/v2/auth', {username: this.username, factor: 'auto', device: 'auto', type : 'Remote security challenge', pushinfo: 'from=Demo%20Challenge&domain=test.com&reason=approval%20for%20action'}, (data) => {this.updateFlow(data, 'awaitPush', this.procResult)});
+            this.client.jsonApiCall('POST', '/auth/v2/auth', {username: user, factor: 'auto', device: 'auto', type : 'Remote security challenge', pushinfo: 'from=Demo%20Challenge&domain=test.com&reason=approval%20for%20action'}, (data) => {this.updateFlow(data, user, 'awaitPush', this.procResult)});
     }
 }
 
-    #procResult = () => {
-        if (this.currData?.response?.result === 'allow' && this.state === 'awaitPush') {
-            this.res.render('success.html', {message: 'Challenge Approved'});
+    #procResult = (user) => {
+        if (this.currData?.response?.result === 'allow' && this.state[user] === 'awaitPush') {
+            this.emit('Approval', user);
         } else {
-            this.res.render('success.html', {message: 'Challenge Denied'});
+            this.emit('Denial', user);
         }
     }
 
