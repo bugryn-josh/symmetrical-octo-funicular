@@ -4,3 +4,4 @@ TODO:
 - [ ] - Implement Passcode option with input
 - [ ] - Implement timed await with Passcode option
 - [ ] - Implement potentially better session handling ?? may not be necessary as an API based program
+- [ ] - Test user messages
